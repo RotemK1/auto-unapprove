@@ -1,0 +1,166 @@
+name: Auto Unapprove Reviews
+
+on:
+  # Trigger when PR is synchronized (new commits)
+  pull_request:
+    types: [synchronize]
+  
+  # Optional: Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: 'PR Number'
+        required: true
+        type: number
+      dry-run:
+        description: 'Dry run mode'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  auto-unapprove:
+    runs-on: ubuntu-latest
+    env:
+      ACTIONS_STEP_DEBUG: ${{ secrets.ACTIONS_STEP_DEBUG }}
+    
+    steps:
+      # Create GitHub App token with necessary permissions for team access
+      - name: Create GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.REVIEWS_APP_ID }}
+          private-key: ${{ secrets.REVIEWS_APP_PRIVATE_KEY }}
+          # Add repositories and permissions as needed
+          repositories: ${{ github.repository }}
+
+      # Dry run first (safe analysis)
+      - name: Analyze Reviews (Dry Run)
+        uses: RotemK1/auto-unapprove@main
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          pr-number: ${{ github.event.number || github.event.inputs.pr-number }}
+          dry-run: 'true'
+          code-owners-file: 'CODEOWNERS'  # Optional: custom path
+          target-branch: ${{ github.event.pull_request.base.ref }}
+          team-start-with: '@'  # Team prefix - use '@your-org/' for org-specific teams
+
+---
+
+# Alternative: Using GITHUB_TOKEN (limited team access)
+name: Auto Unapprove (Basic)
+
+on:
+  pull_request:
+    types: [synchronize]
+
+jobs:
+  auto-unapprove-basic:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    steps:
+      - name: Dismiss Stale Reviews
+        uses: RotemK1/auto-unapprove@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ github.event.number }}
+          dry-run: 'false'
+          code-owners-file: '.github/CODEOWNERS'
+          target-branch: ${{ github.event.pull_request.base.ref }}
+          team-start-with: '@'
+
+---
+
+# Advanced: Conditional execution
+name: Auto Unapprove (Conditional)
+
+on:
+  pull_request:
+    types: [synchronize]
+
+jobs:
+  auto-unapprove-advanced:
+    runs-on: ubuntu-latest
+    # Only run for non-draft PRs with changes
+    if: |
+      !github.event.pull_request.draft && 
+      github.event.pull_request.changed_files > 0
+    
+    steps:
+      - name: Create GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.REVIEWS_APP_ID }}
+          private-key: ${{ secrets.REVIEWS_APP_PRIVATE_KEY }}
+
+      # Run only on certain file patterns
+      - name: Check Changed Files
+        id: changes
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            code:
+              - 'src/**'
+              - 'lib/**'
+              - '*.py'
+              - '*.js'
+              - '*.ts'
+
+      - name: Dismiss Reviews (Code Changes Only)
+        if: steps.changes.outputs.code == 'true'
+        uses: RotemK1/auto-unapprove@main
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          pr-number: ${{ github.event.number }}
+          dry-run: 'false'
+          target-branch: ${{ github.event.pull_request.base.ref }}
+          team-start-with: '@myorg/'  # Organization-specific team prefix
+
+---
+
+# Multi-repository setup
+name: Auto Unapprove (Multi-repo)
+
+on:
+  pull_request:
+    types: [synchronize]
+
+jobs:
+  auto-unapprove-multi:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+          - repo: 'frontend'
+            codeowners: '.github/CODEOWNERS'
+            team_prefix: '@frontend-org/'
+          - repo: 'backend' 
+            codeowners: 'CODEOWNERS'
+            team_prefix: '@backend-org/'
+          - repo: 'docs'
+            codeowners: 'docs/CODEOWNERS'
+            team_prefix: '@'
+    
+    steps:
+      - name: Create GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.REVIEWS_APP_ID }}
+          private-key: ${{ secrets.REVIEWS_APP_PRIVATE_KEY }}
+          repositories: myorg/${{ matrix.config.repo }}
+
+      - name: Dismiss Reviews
+        uses: RotemK1/auto-unapprove@main
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          pr-number: ${{ github.event.number }}
+          dry-run: 'false'
+          code-owners-file: ${{ matrix.config.codeowners }}
+          target-branch: ${{ github.event.pull_request.base.ref }}
+          team-start-with: ${{ matrix.config.team_prefix }} 

@@ -1,0 +1,45 @@
+name: 'Auto Unapprove Reviews'
+description: 'Dismiss pull request reviews when code owners change files'
+author: 'Rotem Kalman'
+branding:
+  icon: 'check-circle'
+  color: 'green'
+
+inputs:
+  github-token:
+    description: 'GitHub token'
+    required: true
+  pr-number:
+    description: 'Pull request number'
+    required: true
+  dry-run:
+    description: 'Run in dry-run mode (no actual dismissals)'
+    required: false
+    default: 'true'
+  code-owners-file:
+    description: 'Path to CODEOWNERS file'
+    required: false
+    default: 'CODEOWNERS'
+  target-branch:
+    description: 'Target branch'
+    required: false
+    default: 'main'
+  team-start-with:
+    description: 'Team start with'
+    required: false
+    default: '@your-org/'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run Auto Unapprove
+      shell: bash
+      run: |
+        export GITHUB_TOKEN="${{ inputs.github-token }}"
+        export PR_NUMBER="${{ inputs.pr-number }}"
+        export DRY_RUN="${{ inputs.dry-run }}"
+        export CODEOWNERS_FILE="${{ inputs.code-owners-file }}"
+        export TARGET_BRANCH="${{ inputs.target-branch }}"
+        export GITHUB_REPOSITORY="${{ github.repository }}"
+        export TEAM_START_WITH="${{ inputs.team-start-with }}"
+        node ${{ github.action_path }}/auto-unapprove.js 

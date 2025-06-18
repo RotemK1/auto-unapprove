@@ -1,0 +1,23 @@
+{
+  "name": "auto-unapprove-action",
+  "version": "1.0.0",
+  "description": "Smart dismissal of PR reviews when code owners modify their files",
+  "main": "auto-unapprove.js",
+  "bin": {
+    "auto-unapprove": "./auto-unapprove.js"
+  },
+  "scripts": {
+    "start": "node auto-unapprove.js"
+  },
+  "keywords": [
+    "github",
+    "reviews",
+    "codeowners",
+    "automation"
+  ],
+  "author": "Rotem Kalman",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.10.0"
+  }
+}
