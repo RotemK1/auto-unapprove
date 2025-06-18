@@ -38,7 +38,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git add package.json
           git commit -m "chore: bump version to v${{ github.event.inputs.version }} [skip ci]" || echo "No changes to commit"
-          git push
+          git push --force
 
       - name: Bump version and push tag
         id: bump-version
