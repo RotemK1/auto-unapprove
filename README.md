@@ -11,21 +11,24 @@ GitHub Action for **smart dismissal** of pull request reviews when code owners m
 ## **Problem & My Solution** 
 ![Dismiss stale pull request approvals option](images/dismiss-approvals.png)
 
-As a DevOps engineer working with large monorepos, I've often encountered a frustrating limitation in GitHub's PR review system.
+As a DevOps engineer working with large monorepos, I've often encountered a frustrating limitation in GitHub's PR review system.
 When new commits are pushed to a PR, GitHub only offers two options:
 1. keep all approvals
 2. dismiss all approvals.
-This binary choice becomes particularly problematic in monorepos where multiple teams own different parts of the codebase
+This binary choice becomes particularly problematic in monorepos where multiple teams own different parts of the codebase
 
-To solve this, I developed a GitHub Action called "Auto Unapprove Reviews" that provides granular control over review dismissals. Here's how it works:
+To solve this, I developed a GitHub Action called "Auto Unapprove Reviews" that provides granular control over review dismissals. Here's how it works:
 
-The action follows a simple but effective flow:
+The action follows a simple but effective flow:
 
 1. Get PR information
 2. Check changed files
 3. Check team ownership
 4. Analyze review status
 5. Take appropriate action
+
+![Dismiss in PR](images/dismiss-in-pr.png)
+
 
 ## 📁 **File Structure**
 
@@ -86,9 +89,7 @@ node auto-unapprove.js
 ```
 
 ## 🧠 **How It Works**
-![Action Flow](images/action-flow.png
-)
-
+![Action Flow](images/action-flow.png)
 
 1. **Get all changed files** from the entire PR (not just latest commit)
 2. **Parse CODEOWNERS** from the PR target branch (not default branch) using hierarchical path matching (most specific wins)
@@ -98,6 +99,51 @@ node auto-unapprove.js
    - Dismiss code owners who authored commits
    - Dismiss stale approvals (post-approval commits to owned files)
    - Preserve legitimate approvals from non-owners
+
+## 📝 **Example Workflow**
+
+```yaml
+name: Auto Unapprove
+
+on:
+  pull_request:
+    types: [synchronize]
+
+jobs:
+  auto-unapprove:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.REVIEWS_APP_ID }}
+          private-key: ${{ secrets.REVIEWS_APP_PRIVATE_KEY }}
+
+      - name: Dismiss Stale Reviews
+        uses: RotemK1/auto-unapprove@main
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          pr-number: ${{ github.event.number }}
+          dry-run: 'false'
+          target-branch: ${{ github.event.pull_request.base.ref }}
+          team-start-with: '@your-org/'
+```
+
+_For more workflow examples, see [`example-workflow.yml`](./example-workflow.yml)_
+
+---
+
+**Required Permissions:**
+   for more info on how to use GitHub App token check https://github.com/actions/create-github-app-token
+
+- **Repository permissions:**
+  - Administration: Repository creation, deletion, settings, teams, and collaborators. (**READ ONLY**)
+  - Contents: Repository contents, commits, branches, downloads, releases, and merges. (**READ ONLY**)
+  - Pull requests: Pull requests and related comments, assignees, labels, milestones, and merges. (**READ AND WRITE**)
+
+- **Organization permissions:**
+  - Members: Organization members and teams
 
 ## ⚙️ **Key Features**
 
@@ -170,8 +216,6 @@ node auto-unapprove.js
 | `CODEOWNERS_FILE` | - | `CODEOWNERS` | Path to CODEOWNERS file |
 | `TARGET_BRANCH` | - | `main` | Target branch to read CODEOWNERS from |
 | `CHANGED_FILES` | - | - | Newline-separated files (webhook optimization) | 
-
-
 
 ## 💁🏻 Contributing
 
