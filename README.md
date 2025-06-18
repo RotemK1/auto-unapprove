@@ -8,6 +8,25 @@
 
 GitHub Action for **smart dismissal** of pull request reviews when code owners modify files after approval or when reviewers approve their own changes.
 
+## **Problem & My Solution** 
+![Dismiss stale pull request approvals option](images/dismiss-approvals.png)
+
+As a DevOps engineer working with large monorepos, I've often encountered a frustrating limitation in GitHub's PR review system.
+When new commits are pushed to a PR, GitHub only offers two options:
+1. keep all approvals
+2. dismiss all approvals.
+This binary choice becomes particularly problematic in monorepos where multiple teams own different parts of the codebase
+
+To solve this, I developed a GitHub Action called "Auto Unapprove Reviews" that provides granular control over review dismissals. Here's how it works:
+
+The action follows a simple but effective flow:
+
+1. Get PR information
+2. Check changed files
+3. Check team ownership
+4. Analyze review status
+5. Take appropriate action
+
 ## 📁 **File Structure**
 
 ```
@@ -67,6 +86,9 @@ node auto-unapprove.js
 ```
 
 ## 🧠 **How It Works**
+![Action Flow](images/action-flow.png
+)
+
 
 1. **Get all changed files** from the entire PR (not just latest commit)
 2. **Parse CODEOWNERS** from the PR target branch (not default branch) using hierarchical path matching (most specific wins)
