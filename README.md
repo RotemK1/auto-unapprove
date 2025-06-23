@@ -1,6 +1,6 @@
 # 🚫 Auto Unapprove Reviews Action
 
-![GitHub Action](https://github.com/RotemK1/auto-unapprove/action.yml/badge.svg?branch=main)
+![GitHub Action](https://github.com/RotemK1/auto-unapprove/actions/workflows/create-release.yml/badge.svg?branch=main)
 ![GitHub repo size](https://img.shields.io/github/repo-size/RotemK1/auto-unapprove)
 ![Github open issues](https://img.shields.io/github/issues-raw/RotemK1/auto-unapprove)
 ![GitHub all releases](https://img.shields.io/github/downloads/RotemK1/auto-unapprove/total)
