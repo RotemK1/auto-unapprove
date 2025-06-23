@@ -10,6 +10,9 @@
 | JSCPD                      | Pass ✅           |
 | JSON                       | Pass ✅           |
 | JSON_PRETTIER              | Pass ✅           |
+| MARKDOWN                   | Pass ✅           |
+| MARKDOWN_PRETTIER          | Pass ✅           |
+| NATURAL_LANGUAGE           | Pass ✅           |
 | YAML                       | Pass ✅           |
 | YAML_PRETTIER              | Pass ✅           |
 
