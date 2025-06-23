@@ -1,47 +1,74 @@
-name: Lint Codebase
+name: Lint
 
-on:
-  pull_request:
-    branches:
-      - main
+on: # yamllint disable-line rule:truthy
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
+
 
 permissions:
-  contents: read
+  contents: write
   packages: read
   statuses: write
 
 jobs:
-  lint:
-    name: Lint Codebase
+  build:
+    name: Lint
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      packages: read
+      # To report GitHub Actions status checks
+      statuses: write
+
     steps:
-      - name: Checkout
-        id: checkout
+
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.REVIEWS_APP_ID }}
+          private-key: ${{ secrets.REVIEWS_APP_PRIVATE_KEY }}
+
+
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
+          # super-linter needs the full git history to get the
+          # list of files that changed across commits
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
-      - name: Setup Node.js
-        id: setup-node
-        uses: actions/setup-node@v4
-        with:
-          cache: npm
 
-      - name: Install Dependencies
-        id: install
-        run: npm ci
-
-      - name: Lint Codebase
-        id: super-linter
-        uses: super-linter/super-linter/slim@v6
+          
+      - name: Super-linter
+        uses: super-linter/super-linter@v7.4.0 # x-release-please-version
         env:
+          # To report GitHub Actions status checks
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          FIX_SHELL_SHFMT: true
+          FIX_YAML_PRETTIER: true
+          FIX_JAVASCRIPT_ES: true
+          FIX_JAVASCRIPT_PRETTIER: true
           DEFAULT_BRANCH: main
-          FILTER_REGEX_EXCLUDE: dist\/.*|\.github\/workflows\/[^\/]+\.yml|README\.md
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JAVASCRIPT_DEFAULT_STYLE: prettier
-          VALIDATE_ALL_CODEBASE: true
-          VALIDATE_JSCPD: false
+          FILTER_REGEX_EXCLUDE: dist\/.*|\.github\/workflows\/[^\/]+\.yml|README\.md|github_conf\/.*
+          VALIDATE_JAVASCRIPT_STANDARD: false
+          
+      - name: Commit and push linting fixes
+        # Run only on:
+        # - Pull requests
+        # - Not on the default branch
+        if: >
+          github.event_name == 'pull_request' &&
+          github.ref_name != github.event.repository.default_branch
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref }}
+          commit_message: "chore: fix linting issues"
+          commit_user_name: super-linter
+          commit_user_email: super-linter@super-linter.dev
+
+          
