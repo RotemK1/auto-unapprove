@@ -26,18 +26,29 @@ jobs:
       statuses: write
 
     steps:
+
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.REVIEWS_APP_ID }}
+          private-key: ${{ secrets.REVIEWS_APP_PRIVATE_KEY }}
+
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           # super-linter needs the full git history to get the
           # list of files that changed across commits
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
+
+          
       - name: Super-linter
         uses: super-linter/super-linter@v7.4.0 # x-release-please-version
         env:
           # To report GitHub Actions status checks
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           FIX_SHELL_SHFMT: true
           FIX_YAML_PRETTIER: true
           FIX_JAVASCRIPT_ES: true
