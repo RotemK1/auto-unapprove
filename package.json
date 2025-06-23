@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node auto-unapprove.js",
-    "lint": "eslint . --ext .js,.ts,.json,.jsonc,.json5"
+    "lint": "eslint . --ext .js,.ts,.json,.jsonc,.json5 --config .github/lint/.eslintrc.yml"
   },
   "keywords": [
     "github",
