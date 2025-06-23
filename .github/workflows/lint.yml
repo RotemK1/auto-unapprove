@@ -1,44 +1,57 @@
 name: Lint
 
-permissions:
-  contents: read
+on: # yamllint disable-line rule:truthy
+  push: null
+  pull_request: null
 
-on:
-  # Trigger the workflow on push or pull request,
-  # but only for the main branch
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+permissions: {}
 
 jobs:
-  run-linters:
-    name: Run linters
+  build:
+    name: Lint
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
-      checks: write
       packages: read
+      # To report GitHub Actions status checks
       statuses: write
 
     steps:
-      - name: Check out Git repository
+      - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v1
         with:
-          node-version: 12
+          # super-linter needs the full git history to get the
+          # list of files that changed across commits
+          fetch-depth: 0
 
-      # ESLint and Prettier must be in `package.json`
-      - name: Install Node.js dependencies
-        run: npm ci
-
-      - name: Run linters
-        uses: wearerequired/lint-action@v2
+      - name: Super-linter
+        uses: super-linter/super-linter@v7.4.0 # x-release-please-version
+        env:
+          # To report GitHub Actions status checks
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FIX_SHELL_SHFMT: true
+          FIX_YAML_PRETTIER: true
+          FIX_JAVASCRIPT_ES: true
+          FIX_JAVASCRIPT_PRETTIER: true
+          DEFAULT_BRANCH: main
+          FILTER_REGEX_EXCLUDE: dist\/.*|\.github\/workflows\/[^\/]+\.yml|README\.md
+          
+          # To reuse the same Super-linter configuration that you use in the
+          # lint job without duplicating it, see
+          # https://github.com/super-linter/super-linter/blob/main/docs/run-linter-locally.md#share-environment-variables-between-environments
+      - name: Commit and push linting fixes
+        # Run only on:
+        # - Pull requests
+        # - Not on the default branch
+        if: >
+          github.event_name == 'pull_request' &&
+          github.ref_name != github.event.repository.default_branch
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          eslint: true
-          prettier: true
-          auto_fix: true
+          branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref }}
+          commit_message: "chore: fix linting issues"
+          commit_user_name: super-linter
+          commit_user_email: super-linter@super-linter.dev
+
+          
