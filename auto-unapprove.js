@@ -403,6 +403,8 @@ function getRelevantTeams(fileOwnersMap) {
         teams.add(teamName);
       }
     });
+    console.log(`filename: ${filename}`);
+    console.log(`owners: ${owners}`);
   }
   
   return Array.from(teams);
@@ -416,6 +418,7 @@ async function checkTeamMembership(username, teamSlug, headers) {
     );
     return response.status === 204;
   } catch (error) {
+    console.log(`error: ${error}`);
     return false;
   }
 }

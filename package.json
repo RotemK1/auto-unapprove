@@ -7,7 +7,9 @@
     "auto-unapprove": "./auto-unapprove.js"
   },
   "scripts": {
-    "start": "node auto-unapprove.js"
+    "start": "node auto-unapprove.js",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix"
   },
   "keywords": [
     "github",
@@ -19,5 +21,8 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.10.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.29.0"
   }
 }
