@@ -45,10 +45,8 @@ jobs:
           DEFAULT_BRANCH: main
           FILTER_REGEX_EXCLUDE: dist\/.*|\.github\/workflows\/[^\/]+\.yml|README\.md
           ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
+          VALIDATE_JAVASCRIPT_STANDARD: false
           
-          # To reuse the same Super-linter configuration that you use in the
-          # lint job without duplicating it, see
-          # https://github.com/super-linter/super-linter/blob/main/docs/run-linter-locally.md#share-environment-variables-between-environments
       - name: Commit and push linting fixes
         # Run only on:
         # - Pull requests
