@@ -54,8 +54,7 @@ jobs:
           FIX_JAVASCRIPT_ES: true
           FIX_JAVASCRIPT_PRETTIER: true
           DEFAULT_BRANCH: main
-          FILTER_REGEX_EXCLUDE: dist\/.*|\.github\/workflows\/[^\/]+\.yml|README\.md
-          ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
+          FILTER_REGEX_EXCLUDE: dist\/.*|\.github\/workflows\/[^\/]+\.yml|README\.md|github_conf\/.*
           VALIDATE_JAVASCRIPT_STANDARD: false
           
       - name: Commit and push linting fixes
