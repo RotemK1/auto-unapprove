@@ -1,67 +1,35 @@
-name: Lint Codebase
+name: Lint
 
 on:
-  pull_request:
-    branches:
-      - main
+  # Trigger the workflow on push or pull request,
+  # but only for the main branch
   push:
     branches:
       - main
-
-permissions:
-  contents: read
-  packages: read
-  statuses: write
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  lint:
-    name: Lint Codebase
+  run-linters:
+    name: Run linters
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        id: checkout
+      - name: Check out Git repository
         uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v1
         with:
-          fetch-depth: 0
+          python-version: 3.8
 
-      - name: Setup Node.js
-        id: setup-node
-        uses: actions/setup-node@v4
+      - name: Install Python dependencies
+        run: pip install black flake8
+
+      - name: Run linters
+        uses: wearerequired/lint-action@v2
         with:
-          cache: npm
-
-      - name: Install Dependencies
-        id: install
-        run: npm ci
-
-      - name: Lint Codebase
-        id: super-linter
-        uses: super-linter/super-linter/slim@v7.4.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEFAULT_BRANCH: main
-          FILTER_REGEX_EXCLUDE: dist\/.*|\.github\/workflows\/[^\/]+\.yml|README\.md
-          JAVASCRIPT_DEFAULT_STYLE: prettier
-          VALIDATE_ALL_CODEBASE: true
-          FIX_JAVASCRIPT_ES: true
-          FIX_JAVASCRIPT_PRETTIER: true
-          FIX_YAML_PRETTIER: true
-          FIX_SHELL_SHFMT: true
-          VALIDATE_JSCPD: false
-
-      - name: Commit and push linting fixes
-        # Run only on:
-        # - Pull requests
-        # - Not on the default branch
-        if: >
-          github.event_name == 'pull_request' &&
-          github.ref_name != github.event.repository.default_branch
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref }}
-          commit_message: "chore: fix linting issues"
-          commit_user_name: super-linter
-          commit_user_email: super-linter@super-linter.dev
-
-          
+          auto_fix: true
+          black: true
+          black_auto_fix: true
