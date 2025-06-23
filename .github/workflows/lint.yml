@@ -1,5 +1,8 @@
 name: Lint
 
+permissions:
+  contents: read
+
 on:
   # Trigger the workflow on push or pull request,
   # but only for the main branch
@@ -14,6 +17,11 @@ jobs:
   run-linters:
     name: Run linters
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      packages: read
+      statuses: write
 
     steps:
       - name: Check out Git repository
@@ -33,3 +41,5 @@ jobs:
           auto_fix: true
           black: true
           black_auto_fix: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
