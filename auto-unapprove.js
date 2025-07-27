@@ -71,19 +71,10 @@ async function smartDismissReviews() {
       );
       console.log(`📁 Files from webhook payload (${changedFiles.length}):`);
     } else {
-      // Fast: Get ALL files changed in the PR
-      console.log(`📁 Fetching ALL changed files from PR...`);
+      // Fast: Get ALL files changed in the PR with pagination
+      console.log(`📁 Fetching ALL changed files from PR (with pagination)...`);
 
-      const filesResponse = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/files`,
-        { headers },
-      );
-      if (!filesResponse.ok) {
-        throw new Error(`Failed to fetch PR files: ${filesResponse.status}`);
-      }
-
-      const files = await filesResponse.json();
-      changedFiles = files.map((file) => file.filename);
+      changedFiles = await getAllChangedFiles(headers);
       console.log(`📁 All changed files in PR (${changedFiles.length}):`);
     }
 
@@ -101,31 +92,17 @@ async function smartDismissReviews() {
 
     console.log(`🎯 Target branch: ${targetBranch}`);
 
-    const [reviewsResponse, codeownersResponse, commitsResponse] =
-      await Promise.all([
-        fetch(
-          `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/reviews`,
-          { headers },
-        ),
-        fetch(
-          `https://api.github.com/repos/${owner}/${repo}/contents/${codeownersFile}?ref=${targetBranch}`,
-          { headers },
-        ),
-        fetch(
-          `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/commits`,
-          { headers },
-        ),
-      ]);
+    const [codeownersResponse] = await Promise.all([
+      fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${codeownersFile}?ref=${targetBranch}`,
+        { headers },
+      ),
+    ]);
 
-    if (!reviewsResponse.ok) {
-      throw new Error(`Failed to fetch reviews: ${reviewsResponse.status}`);
-    }
-    if (!commitsResponse.ok) {
-      throw new Error(`Failed to fetch commits: ${commitsResponse.status}`);
-    }
-
-    const reviews = await reviewsResponse.json();
-    const commits = await commitsResponse.json();
+    // Get all reviews and commits with pagination
+    console.log(`📋 Fetching all reviews and commits...`);
+    const reviews = await getAllReviews(headers);
+    const commits = await getAllCommits(headers);
     const approvedReviews = reviews.filter(
       (review) => review.state === "APPROVED",
     );
@@ -398,6 +375,105 @@ async function smartDismissReviews() {
 }
 
 // Helper functions
+async function getAllChangedFiles(headers) {
+  const allFiles = [];
+  let page = 1;
+  const perPage = 100; // Maximum allowed by GitHub API
+
+  while (true) {
+    const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/files?page=${page}&per_page=${perPage}`;
+    console.log(`   📄 Fetching page ${page}...`);
+
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch PR files page ${page}: ${response.status}`);
+    }
+
+    const files = await response.json();
+    if (files.length === 0) {
+      break; // No more files
+    }
+
+    allFiles.push(...files.map((file) => file.filename));
+    console.log(`   📄 Page ${page}: ${files.length} files`);
+
+    // Check if we've reached the last page
+    if (files.length < perPage) {
+      break;
+    }
+
+    page++;
+  }
+
+  return allFiles;
+}
+
+async function getAllReviews(headers) {
+  const allReviews = [];
+  let page = 1;
+  const perPage = 100; // Maximum allowed by GitHub API
+
+  while (true) {
+    const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/reviews?page=${page}&per_page=${perPage}`;
+    console.log(`   📋 Fetching reviews page ${page}...`);
+
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch reviews page ${page}: ${response.status}`);
+    }
+
+    const reviews = await response.json();
+    if (reviews.length === 0) {
+      break; // No more reviews
+    }
+
+    allReviews.push(...reviews);
+    console.log(`   📋 Reviews page ${page}: ${reviews.length} reviews`);
+
+    // Check if we've reached the last page
+    if (reviews.length < perPage) {
+      break;
+    }
+
+    page++;
+  }
+
+  return allReviews;
+}
+
+async function getAllCommits(headers) {
+  const allCommits = [];
+  let page = 1;
+  const perPage = 100; // Maximum allowed by GitHub API
+
+  while (true) {
+    const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/commits?page=${page}&per_page=${perPage}`;
+    console.log(`   📝 Fetching commits page ${page}...`);
+
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch commits page ${page}: ${response.status}`);
+    }
+
+    const commits = await response.json();
+    if (commits.length === 0) {
+      break; // No more commits
+    }
+
+    allCommits.push(...commits);
+    console.log(`   📝 Commits page ${page}: ${commits.length} commits`);
+
+    // Check if we've reached the last page
+    if (commits.length < perPage) {
+      break;
+    }
+
+    page++;
+  }
+
+  return allCommits;
+}
+
 function parseCodeowners(content) {
   const lines = content.split("\n");
   const owners = [];
@@ -534,4 +610,9 @@ if (require.main === module) {
   smartDismissReviews();
 }
 
-module.exports = { smartDismissReviews };
+module.exports = { 
+  smartDismissReviews,
+  getAllChangedFiles,
+  getAllReviews,
+  getAllCommits
+};

@@ -219,6 +219,32 @@ _For more workflow examples, see [`example-workflow.yml`](./example-workflow.yml
 | `TARGET_BRANCH` | - | `main` | Target branch to read CODEOWNERS from |
 | `CHANGED_FILES` | - | - | Newline-separated files (webhook optimization) | 
 
+## 🧪 **Testing**
+
+The project includes comprehensive tests for the pagination implementation:
+
+### **Quick Test** (No API calls needed):
+```bash
+./tests/run-tests.sh
+```
+
+### **Test with Real Data**:
+```bash
+export GITHUB_TOKEN='your_token'
+export GITHUB_REPOSITORY='owner/repo'
+export PR_NUMBER='123'
+export DRY_RUN='true'
+./tests/test-real-pagination.sh
+```
+
+### **Test Files**:
+- `tests/test-pagination.js` - Logic tests with simulated data
+- `tests/test-mock-pagination.js` - Mock API tests
+- `tests/test-real-pagination.sh` - Real GitHub API tests
+- `tests/TESTING.md` - Comprehensive testing guide
+
+For detailed testing instructions, see [`tests/README.md`](tests/README.md).
+
 ## 💁🏻 Contributing
 
 This is an open source project. Any contribution would be greatly appreciated!
